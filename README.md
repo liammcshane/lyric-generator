@@ -1,11 +1,10 @@
-# Rock Lyrics Generator
+# Lyric Generator
 
-Streamlit app for generating rock lyrics using a fine-tuned GPT-2 model.
+Streamlit app for generating lyrics using a fine-tuned GPT-2 model.
 
 ## Model Information
 - Base model: GPT-2
-- Fine-tuned on: Rock lyrics dataset
-- Model files: 2 files copied
+- Fine-tuned on: Custom lyric dataset
 
 ## Deployment Structure
 ```
