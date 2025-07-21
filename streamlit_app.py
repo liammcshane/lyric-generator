@@ -1,0 +1,252 @@
+import streamlit as st
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import os
+from datetime import datetime
+
+# Configure Streamlit page
+st.set_page_config(
+    page_title="Rock Lyrics Generator",
+    page_icon="🎸",
+    layout="wide"
+)
+
+@st.cache_resource
+def load_model():
+    """Load the model and tokenizer (cached for performance)"""
+    try:
+        # Load original GPT-2 tokenizer
+        tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        tokenizer.pad_token = tokenizer.eos_token
+        
+        # Load fine-tuned model from local directory
+        model_path = "./model"  # Assumes model files are in ./model/ directory
+        model = AutoModelForCausalLM.from_pretrained(model_path)
+        
+        # Set device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        
+        return tokenizer, model, device
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.error("Please ensure the model files are in the './model/' directory")
+        return None, None, None
+
+def generate_lyrics(tokenizer, model, device, prompt, **generation_params):
+    """Generate lyrics for a single prompt"""
+    encoded_prompt = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+    
+    with torch.no_grad():
+        output_sequences = model.generate(
+            input_ids=encoded_prompt,
+            pad_token_id=tokenizer.eos_token_id,
+            early_stopping=True,
+            **generation_params
+        )
+    
+    generated_texts = []
+    for sequence in output_sequences:
+        text = tokenizer.decode(sequence, skip_special_tokens=True)
+        generated_texts.append(text)
+    
+    return generated_texts
+
+def create_download_content(all_results):
+    """Create formatted text content for download"""
+    content = "GENERATED ROCK LYRICS\n"
+    content += "=" * 50 + "\n"
+    content += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    content += "=" * 50 + "\n\n"
+    
+    for prompt_idx, (prompt, generations) in enumerate(all_results, 1):
+        content += f"PROMPT {prompt_idx}: {prompt}\n"
+        content += "-" * 60 + "\n\n"
+        
+        for gen_idx, text in enumerate(generations, 1):
+            content += f"--- Generation {gen_idx} ---\n\n"
+            content += text + "\n\n"
+            content += "-" * 40 + "\n\n"
+        
+        content += "\n"
+    
+    return content
+
+# Main app
+def main():
+    st.title("🎸 Rock Lyrics Generator")
+    st.markdown("*Generate rock lyrics using a fine-tuned GPT-2 model*")
+    
+    # Load model
+    tokenizer, model, device = load_model()
+    
+    if tokenizer is None or model is None:
+        st.stop()
+    
+    st.success("✅ Model loaded successfully!")
+    
+    # Sidebar for parameters
+    st.sidebar.header("🎛️ Generation Parameters")
+    
+    # Generation parameters with sliders
+    num_sequences_per_prompt = st.sidebar.number_input(
+        "Sequences per prompt",
+        min_value=1,
+        max_value=5,
+        value=3,
+        step=1,
+        help="Number of lyrics to generate for each prompt"
+    )
+    
+    min_length = st.sidebar.slider(
+        "Minimum length",
+        min_value=20,
+        max_value=200,
+        value=80,
+        step=10,
+        help="Minimum number of tokens to generate"
+    )
+    
+    max_length = st.sidebar.slider(
+        "Maximum length",
+        min_value=100,
+        max_value=500,
+        value=300,
+        step=25,
+        help="Maximum number of tokens to generate"
+    )
+    
+    temperature = st.sidebar.slider(
+        "Temperature",
+        min_value=0.1,
+        max_value=2.0,
+        value=1.2,
+        step=0.1,
+        help="Controls randomness: lower = more focused, higher = more creative"
+    )
+    
+    top_p = st.sidebar.slider(
+        "Top-p (nucleus sampling)",
+        min_value=0.1,
+        max_value=1.0,
+        value=0.9,
+        step=0.05,
+        help="Probability threshold for token selection"
+    )
+    
+    top_k = st.sidebar.slider(
+        "Top-k sampling",
+        min_value=10,
+        max_value=100,
+        value=50,
+        step=5,
+        help="Number of top tokens to consider"
+    )
+    
+    repetition_penalty = st.sidebar.slider(
+        "Repetition penalty",
+        min_value=0.5,
+        max_value=2.0,
+        value=1.1,
+        step=0.05,
+        help="Penalty for repeating tokens"
+    )
+    
+    # Main content area
+    st.header("✍️ Enter Your Prompts")
+    
+    # Number of prompts selector
+    num_prompts = st.selectbox(
+        "How many prompts would you like to use?",
+        options=[1, 2, 3, 4, 5],
+        index=0
+    )
+    
+    # Input fields for prompts
+    prompts = []
+    for i in range(num_prompts):
+        prompt = st.text_input(
+            f"Prompt {i+1}:",
+            value="I want a girl who can dunk" if i == 0 else "",
+            key=f"prompt_{i}",
+            placeholder="Enter a starting phrase for your lyrics..."
+        )
+        if prompt.strip():
+            prompts.append(prompt.strip())
+    
+    # Generate button
+    if st.button("🎵 Generate Lyrics", type="primary", use_container_width=True):
+        if not prompts:
+            st.warning("Please enter at least one prompt!")
+            return
+        
+        all_results = []
+        
+        # Progress bar
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        for prompt_idx, prompt in enumerate(prompts):
+            status_text.text(f"Generating lyrics for prompt {prompt_idx + 1}/{len(prompts)}: '{prompt}'")
+            
+            try:
+                generated_texts = generate_lyrics(
+                    tokenizer, model, device, prompt,
+                    max_length=max_length,
+                    min_length=min_length,
+                    temperature=temperature,
+                    top_p=top_p,
+                    top_k=top_k,
+                    do_sample=True,
+                    repetition_penalty=repetition_penalty,
+                    num_return_sequences=num_sequences_per_prompt
+                )
+                
+                all_results.append((prompt, generated_texts))
+                
+            except Exception as e:
+                st.error(f"Error generating lyrics for prompt '{prompt}': {e}")
+                continue
+            
+            progress_bar.progress((prompt_idx + 1) / len(prompts))
+        
+        status_text.text("Generation complete! 🎉")
+        
+        # Display results
+        st.header("🎼 Generated Lyrics")
+        
+        for prompt_idx, (prompt, generations) in enumerate(all_results, 1):
+            st.subheader(f"Prompt {prompt_idx}: '{prompt}'")
+            
+            # Create tabs for each generation
+            tab_names = [f"Generation {i+1}" for i in range(len(generations))]
+            tabs = st.tabs(tab_names)
+            
+            for tab_idx, (tab, text) in enumerate(zip(tabs, generations)):
+                with tab:
+                    st.text_area(
+                        f"Generated lyrics {tab_idx + 1}:",
+                        value=text,
+                        height=300,
+                        key=f"result_{prompt_idx}_{tab_idx}"
+                    )
+            
+            st.divider()
+        
+        # Download button
+        if all_results:
+            download_content = create_download_content(all_results)
+            st.download_button(
+                label="💾 Download All Lyrics as Text File",
+                data=download_content,
+                file_name=f"generated_lyrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("*Built with Streamlit and Transformers*")
+
+if __name__ == "__main__":
+    main()
