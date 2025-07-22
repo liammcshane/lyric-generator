@@ -76,7 +76,7 @@ def create_download_content(all_results):
 def main():
     st.title("Lyric Generator")
     st.markdown("*Generate \"creative\" lyrics using a fine-tuned GPT-2 model*")
-    
+
     # Load model
     tokenizer, model, device = load_model()
     
@@ -92,8 +92,8 @@ def main():
     num_sequences_per_prompt = st.sidebar.number_input(
         "Lyrics per prompt",
         min_value=1,
-        max_value=5,
-        value=3,
+        max_value=20,
+        value=5,
         step=1,
         help="Number of lyrics to generate for each lyric prompt"
     )
@@ -155,25 +155,25 @@ def main():
     # Main content area
     st.header("Enter a first line, word, or phrase")
     
-    # Number of prompts selector
-    num_prompts = st.selectbox(
-        "How many lyric prompts to use",
-        options=[1, 2, 3, 4, 5],
-        index=0
-    )
-    
     # Input fields for prompts
     prompts = []
     for i in range(num_prompts):
         prompt = st.text_input(
             f"Prompt {i+1}:",
-            value="Early one morning the sun was shining..." if i == 0 else "",
+            value="Early one morning the sun was shining" if i == 0 else "",
             key=f"prompt_{i}",
             placeholder="Enter a starting phrase for your lyrics..."
         )
         if prompt.strip():
             prompts.append(prompt.strip())
     
+    # Number of prompts selector
+    num_prompts = st.selectbox(
+        "How many lyric prompts to use",
+        options=[1, 2, 3, 4, 5],
+        index=0
+    )
+
     # Generate button
     if st.button("Generate Lyrics", type="primary", use_container_width=True):
         if not prompts:
@@ -212,6 +212,8 @@ def main():
         
         status_text.text("Generation complete")
         
+
+
         # Display results
         st.header("Generated Lyrics")
         
@@ -243,7 +245,9 @@ def main():
                 mime="text/plain",
                 use_container_width=True
             )
-    
+
+    st.markdown("The model can take a little while to generate. Try a higher number for 'Lyrics per prompt' to generate more results for each run.")
+
     # Footer
     st.markdown("---")
     st.markdown("*Built with Streamlit and Transformers*")
