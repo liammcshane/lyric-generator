@@ -1,17 +1,9 @@
 # Lyric Generator
 
-Streamlit app for generating lyrics using a fine-tuned GPT-2 model.
+https://lyric-generator.streamlit.app/
 
-## Model Information
-- Base model: GPT-2
-- Fine-tuned on: Custom lyric dataset
+Streamlit app for generating lyrics using a fine-tuned GPT-2 model. Fine tuned on a curated dataset of lyrics that I consider good. Will often have broken song structure and unrelated sections, however it will generate some absolute gems of phrases, lines and even whole sections every once in a while. Probably more useful as a tool for lyrical inspiration than a standalone lyric generator. 
 
-## Deployment Structure
-```
-streamlit_files/
-├── model/
-│   ├── config.json
-│   └── model.safetensors
-├── requirements.txt
-└── README.md
-```
+Play around with the parameters to get results to suit your needs:
+
+Higher repetition penalty will 
