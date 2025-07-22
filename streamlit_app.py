@@ -157,7 +157,6 @@ def main():
 
     # Single prompt input
     prompt = st.text_input(
-        "Lyric prompt:",
         placeholder="Enter a starting phrase for your lyrics..."
     )
 
