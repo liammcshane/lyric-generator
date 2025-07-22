@@ -154,7 +154,16 @@ def main():
     
     # Main content area
     st.header("Enter a first line, word, or phrase")
+
+    st.markdown("*Enter multiple lyric prompts to generate multiple sets of lyrics*")
     
+    # Number of prompts selector
+    num_prompts = st.selectbox(
+        "How many lyric prompts to use",
+        options=[1, 2, 3, 4, 5],
+        index=0
+    )
+
     # Input fields for prompts
     prompts = []
     for i in range(num_prompts):
@@ -166,13 +175,6 @@ def main():
         )
         if prompt.strip():
             prompts.append(prompt.strip())
-    
-    # Number of prompts selector
-    num_prompts = st.selectbox(
-        "How many lyric prompts to use",
-        options=[1, 2, 3, 4, 5],
-        index=0
-    )
 
     # Generate button
     if st.button("Generate Lyrics", type="primary", use_container_width=True):
