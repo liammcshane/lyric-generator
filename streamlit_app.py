@@ -52,12 +52,24 @@ def generate_lyrics(tokenizer, model, device, prompt, **generation_params):
     
     return generated_texts
 
-def create_download_content(all_results):
+def create_download_content(all_results, generation_params=None):
     """Create formatted text content for download"""
     content = "GENERATED LYRICS\n"
     content += "=" * 50 + "\n"
     content += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
     content += "=" * 50 + "\n\n"
+    
+    # Add generation parameters if provided
+    if generation_params:
+        content += "GENERATION PARAMETERS\n"
+        content += "-" * 30 + "\n"
+        content += f"Minimum Length: {generation_params['min_length']}\n"
+        content += f"Maximum Length: {generation_params['max_length']}\n"
+        content += f"Temperature: {generation_params['temperature']}\n"
+        content += f"Top-p: {generation_params['top_p']}\n"
+        content += f"Top-k: {generation_params['top_k']}\n"
+        content += f"Repetition Penalty: {generation_params['repetition_penalty']}\n"
+        content += "\n" + "=" * 50 + "\n\n"
     
     for prompt_idx, (prompt, generations) in enumerate(all_results, 1):
         content += f"PROMPT {prompt_idx}: {prompt}\n"
@@ -207,7 +219,15 @@ def main():
                 )
         
         # Download button
-        download_content = create_download_content([(prompt, generated_texts)])
+        generation_params = {
+            'min_length': min_length,
+            'max_length': max_length,
+            'temperature': temperature,
+            'top_p': top_p,
+            'top_k': top_k,
+            'repetition_penalty': repetition_penalty
+        }
+        download_content = create_download_content([(prompt, generated_texts)], generation_params)
         st.download_button(
             label="Download Lyrics as Text File",
             data=download_content,

@@ -6,4 +6,11 @@ Streamlit app for generating lyrics using a fine-tuned GPT-2 model. Fine tuned o
 
 Play around with the parameters to get results to suit your needs:
 
-Higher repetition penalty will 
+Lower repetition penalty will make the lyrics read like a hill country blues song
+
+Higher repetition penalty will make it read like a short story
+
+Temperature affects the randomness of token selection
+
+Top-k and Top-p will filter the pool of tokens to select from
+
