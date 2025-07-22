@@ -90,12 +90,12 @@ def main():
     
     # Generation parameters with sliders
     num_sequences_per_prompt = st.sidebar.number_input(
-        "Lyrics per prompt",
+        "Number of lyrics",
         min_value=1,
         max_value=20,
         value=5,
         step=1,
-        help="Number of lyrics to generate for each lyric prompt"
+        help="Number of lyrics to generate"
     )
     
     min_length = st.sidebar.slider(
@@ -155,100 +155,72 @@ def main():
     # Main content area
     st.header("Enter a first line, word, or phrase")
 
-    st.markdown("*Enter multiple lyric prompts to generate multiple sets of lyrics*")
-    
-    # Number of prompts selector
-    num_prompts = st.selectbox(
-        "How many lyric prompts to use",
-        options=[1, 2, 3, 4, 5],
-        index=0
+    # Single prompt input
+    prompt = st.text_input(
+        "Lyric prompt:",
+        value="Early one morning the sun was shining",
+        placeholder="Enter a starting phrase for your lyrics..."
     )
-
-    # Input fields for prompts
-    prompts = []
-    for i in range(num_prompts):
-        prompt = st.text_input(
-            f"Prompt {i+1}:",
-            value="Early one morning the sun was shining" if i == 0 else "",
-            key=f"prompt_{i}",
-            placeholder="Enter a starting phrase for your lyrics..."
-        )
-        if prompt.strip():
-            prompts.append(prompt.strip())
 
     # Generate button
     if st.button("Generate Lyrics", type="primary", use_container_width=True):
-        if not prompts:
-            st.warning("Please enter at least one prompt")
+        if not prompt.strip():
+            st.warning("Please enter a prompt")
             return
         
-        all_results = []
-        
-        # Progress bar
-        progress_bar = st.progress(0)
+        # Progress indicator
         status_text = st.empty()
+        status_text.text(f"Generating lyrics for: '{prompt}'")
         
-        for prompt_idx, prompt in enumerate(prompts):
-            status_text.text(f"Generating lyrics for prompt {prompt_idx + 1}/{len(prompts)}: '{prompt}'")
+        try:
+            generated_texts = generate_lyrics(
+                tokenizer, model, device, prompt,
+                max_length=max_length,
+                min_length=min_length,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                do_sample=True,
+                repetition_penalty=repetition_penalty,
+                num_return_sequences=num_sequences_per_prompt
+            )
             
-            try:
-                generated_texts = generate_lyrics(
-                    tokenizer, model, device, prompt,
-                    max_length=max_length,
-                    min_length=min_length,
-                    temperature=temperature,
-                    top_p=top_p,
-                    top_k=top_k,
-                    do_sample=True,
-                    repetition_penalty=repetition_penalty,
-                    num_return_sequences=num_sequences_per_prompt
-                )
-                
-                all_results.append((prompt, generated_texts))
-                
-            except Exception as e:
-                st.error(f"Error generating lyrics for prompt '{prompt}': {e}")
-                continue
+            status_text.text("Generation complete")
             
-            progress_bar.progress((prompt_idx + 1) / len(prompts))
-        
-        status_text.text("Generation complete")
+        except Exception as e:
+            st.error(f"Error generating lyrics: {e}")
+            return
         
 
 
         # Display results
         st.header("Generated Lyrics")
+        st.subheader(f"Prompt: '{prompt}'")
         
-        for prompt_idx, (prompt, generations) in enumerate(all_results, 1):
-            st.subheader(f"Prompt {prompt_idx}: '{prompt}'")
-            
-            # Create tabs for each generation
-            tab_names = [f"Generation {i+1}" for i in range(len(generations))]
-            tabs = st.tabs(tab_names)
-            
-            for tab_idx, (tab, text) in enumerate(zip(tabs, generations)):
-                with tab:
-                    st.text_area(
-                        f"Generated lyrics {tab_idx + 1}:",
-                        value=text,
-                        height=300,
-                        key=f"result_{prompt_idx}_{tab_idx}"
-                    )
-            
-            st.divider()
+        # Create tabs for each generation
+        tab_names = [f"Generation {i+1}" for i in range(len(generated_texts))]
+        tabs = st.tabs(tab_names)
+        
+        for tab_idx, (tab, text) in enumerate(zip(tabs, generated_texts)):
+            with tab:
+                st.text_area(
+                    f"Generated lyrics {tab_idx + 1}:",
+                    value=text,
+                    height=300,
+                    key=f"result_{tab_idx}"
+                )
         
         # Download button
-        if all_results:
-            download_content = create_download_content(all_results)
-            st.download_button(
-                label="Download All Lyrics as Text File",
-                data=download_content,
-                file_name=f"generated_lyrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
+        download_content = create_download_content([(prompt, generated_texts)])
+        st.download_button(
+            label="Download Lyrics as Text File",
+            data=download_content,
+            file_name=f"generated_lyrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
 
-    st.markdown("The model can take a little while to generate. Try a higher number for 'Lyrics per prompt' to generate more results for each run.")
+    st.markdown("The model can take a little while to generate. Try a higher number for 'Number of lyrics' to generate more results for each run.")
 
     # Footer
     st.markdown("---")
