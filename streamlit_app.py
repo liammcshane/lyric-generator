@@ -6,8 +6,8 @@ from datetime import datetime
 
 # Configure Streamlit page
 st.set_page_config(
-    page_title="Rock Lyrics Generator",
-    page_icon="🎸",
+    page_title="Lyric Generator",
+    page_icon="🎵",
     layout="wide"
 )
 
@@ -54,7 +54,7 @@ def generate_lyrics(tokenizer, model, device, prompt, **generation_params):
 
 def create_download_content(all_results):
     """Create formatted text content for download"""
-    content = "GENERATED ROCK LYRICS\n"
+    content = "GENERATED LYRICS\n"
     content += "=" * 50 + "\n"
     content += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
     content += "=" * 50 + "\n\n"
@@ -74,8 +74,8 @@ def create_download_content(all_results):
 
 # Main app
 def main():
-    st.title("🎸 Rock Lyrics Generator")
-    st.markdown("*Generate rock lyrics using a fine-tuned GPT-2 model*")
+    st.title("Lyric Generator")
+    st.markdown("*Generate \"creative\" lyrics using a fine-tuned GPT-2 model*")
     
     # Load model
     tokenizer, model, device = load_model()
@@ -83,19 +83,19 @@ def main():
     if tokenizer is None or model is None:
         st.stop()
     
-    st.success("✅ Model loaded successfully!")
+    st.success("Model loaded successfully.")
     
     # Sidebar for parameters
-    st.sidebar.header("🎛️ Generation Parameters")
+    st.sidebar.header("Generation Parameters")
     
     # Generation parameters with sliders
     num_sequences_per_prompt = st.sidebar.number_input(
-        "Sequences per prompt",
+        "Lyrics per prompt",
         min_value=1,
         max_value=5,
         value=3,
         step=1,
-        help="Number of lyrics to generate for each prompt"
+        help="Number of lyrics to generate for each lyric prompt"
     )
     
     min_length = st.sidebar.slider(
@@ -103,7 +103,7 @@ def main():
         min_value=20,
         max_value=200,
         value=80,
-        step=10,
+        step=1,
         help="Minimum number of tokens to generate"
     )
     
@@ -112,7 +112,7 @@ def main():
         min_value=100,
         max_value=500,
         value=300,
-        step=25,
+        step=1,
         help="Maximum number of tokens to generate"
     )
     
@@ -121,8 +121,8 @@ def main():
         min_value=0.1,
         max_value=2.0,
         value=1.2,
-        step=0.1,
-        help="Controls randomness: lower = more focused, higher = more creative"
+        step=0.01,
+        help="Controls randomness: higher = more random"
     )
     
     top_p = st.sidebar.slider(
@@ -130,7 +130,7 @@ def main():
         min_value=0.1,
         max_value=1.0,
         value=0.9,
-        step=0.05,
+        step=0.01,
         help="Probability threshold for token selection"
     )
     
@@ -139,7 +139,7 @@ def main():
         min_value=10,
         max_value=100,
         value=50,
-        step=5,
+        step=1,
         help="Number of top tokens to consider"
     )
     
@@ -148,16 +148,16 @@ def main():
         min_value=0.5,
         max_value=2.0,
         value=1.1,
-        step=0.05,
+        step=0.01,
         help="Penalty for repeating tokens"
     )
     
     # Main content area
-    st.header("✍️ Enter Your Prompts")
+    st.header("Enter a first line, word, or phrase")
     
     # Number of prompts selector
     num_prompts = st.selectbox(
-        "How many prompts would you like to use?",
+        "How many lyric prompts to use",
         options=[1, 2, 3, 4, 5],
         index=0
     )
@@ -167,7 +167,7 @@ def main():
     for i in range(num_prompts):
         prompt = st.text_input(
             f"Prompt {i+1}:",
-            value="I want a girl who can dunk" if i == 0 else "",
+            value="Early one morning the sun was shining..." if i == 0 else "",
             key=f"prompt_{i}",
             placeholder="Enter a starting phrase for your lyrics..."
         )
@@ -175,9 +175,9 @@ def main():
             prompts.append(prompt.strip())
     
     # Generate button
-    if st.button("🎵 Generate Lyrics", type="primary", use_container_width=True):
+    if st.button("Generate Lyrics", type="primary", use_container_width=True):
         if not prompts:
-            st.warning("Please enter at least one prompt!")
+            st.warning("Please enter at least one prompt")
             return
         
         all_results = []
@@ -210,10 +210,10 @@ def main():
             
             progress_bar.progress((prompt_idx + 1) / len(prompts))
         
-        status_text.text("Generation complete! 🎉")
+        status_text.text("Generation complete")
         
         # Display results
-        st.header("🎼 Generated Lyrics")
+        st.header("Generated Lyrics")
         
         for prompt_idx, (prompt, generations) in enumerate(all_results, 1):
             st.subheader(f"Prompt {prompt_idx}: '{prompt}'")
@@ -237,7 +237,7 @@ def main():
         if all_results:
             download_content = create_download_content(all_results)
             st.download_button(
-                label="💾 Download All Lyrics as Text File",
+                label="Download All Lyrics as Text File",
                 data=download_content,
                 file_name=f"generated_lyrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                 mime="text/plain",
