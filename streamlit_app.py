@@ -166,24 +166,19 @@ def main():
             st.warning("Please enter a prompt")
             return
         
-        # Progress indicator
-        status_text = st.empty()
-        status_text.text(f"Generating lyrics for: '{prompt}'")
-        
-        try:
-            generated_texts = generate_lyrics(
-                tokenizer, model, device, prompt,
-                max_length=max_length,
-                min_length=min_length,
-                temperature=temperature,
-                top_p=top_p,
-                top_k=top_k,
-                do_sample=True,
-                repetition_penalty=repetition_penalty,
-                num_return_sequences=num_sequences_per_prompt
-            )
-            
-            status_text.text("Generation complete")
+        with st.spinner(f"Generating lyrics for: '{prompt}'..."):
+            try:
+                generated_texts = generate_lyrics(
+                    tokenizer, model, device, prompt,
+                    max_length=max_length,
+                    min_length=min_length,
+                    temperature=temperature,
+                    top_p=top_p,
+                    top_k=top_k,
+                    do_sample=True,
+                    repetition_penalty=repetition_penalty,
+                    num_return_sequences=num_sequences_per_prompt
+                )
             
         except Exception as e:
             st.error(f"Error generating lyrics: {e}")
