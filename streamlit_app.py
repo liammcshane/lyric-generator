@@ -156,7 +156,7 @@ def main():
     st.header("Enter a first line, word, or phrase")
 
     # Single prompt input
-    prompt = st.text_input(
+    prompt = st.text_input("text input",label_visibility="hidden",
         placeholder="Enter a starting phrase for your lyrics..."
     )
 
