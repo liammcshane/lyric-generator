@@ -180,9 +180,9 @@ def main():
                     num_return_sequences=num_sequences_per_prompt
                 )
             
-        except Exception as e:
-            st.error(f"Error generating lyrics: {e}")
-            return
+            except Exception as e:
+                st.error(f"Error generating lyrics: {e}")
+                return
         
 
 
